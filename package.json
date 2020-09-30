@@ -1,0 +1,15 @@
+{
+  "name": "js-allonge",
+  "version": "1.0.0",
+  "description": "Testing code from the book JS allonge",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "Maria Soria",
+  "license": "ISC",
+  "keywords": [],
+  "devDependencies": {
+    "jest": "^26.4.2"
+  }
+}
