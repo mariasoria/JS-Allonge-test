@@ -334,7 +334,7 @@ describe('Page 34. SHADOWING WITH CONST ', () => {
 
 
 describe('Page 36. Using const inside an IF block', () => {
-    it('Page 37. "if" defines a block scope. With the return inside, uses the value of PI from inside de IF', () => {
+    it('Page 37. "if" defines a block scope. With the return inside, uses the value of PI from INSIDE de IF', () => {
         const diam = (diameter) => { 
             const PI = 3;
             if (true) {
@@ -344,7 +344,7 @@ describe('Page 36. Using const inside an IF block', () => {
         }
         expect((diam)(2)).toBe(6.2831853);
     });
-    it('Page 37. "if" defines a block scope. With the return outside, uses the value of PI from outside de IF', () => {
+    it('Page 37. "if" defines a block scope. With the return outside, uses the value of PI from OUTSIDE de IF', () => {
         const diam = (diameter) => { 
             const PI = 3.14159265;
             if (true) {
@@ -434,13 +434,14 @@ describe('Page 42. FUNCTION DECLARATIONS', () => {
     it('Although fizzbuzz() is declared later in the function, JavaScript behaves as if we’d written', () => {
         expect((function () {
             return fizzbuzz();
-          
+            // la declara bajo, y JS pre-compila esta declaracion y la pone arriba (hace hoisting) antes de la llamada a ésta
             function fizzbuzz () {
               return "Fizz" + "Buzz";
             }
         })()).toBe("FizzBuzz");
     });
 });
+
 
 describe('Page 43. FUNCTION DECLARATION CAVEATS', () => {
     // Function declarations are formally only supposed to be made at what we might call the “top level” of a function
@@ -470,6 +471,134 @@ describe('Page 43. FUNCTION DECLARATION CAVEATS', () => {
         )
     });
 });
+
+
+describe('COMBINATORS AND FUNCTION DECORATORS', () => {
+    // “higher-order” function: a function that either takes functions as arguments, or returns a function, or both 
+    it('page 45. Higher-order functions', () => {
+        const repeat = (num, fn) => (num > 0) ? (repeat(num - 1, fn), fn(num)) : undefined;
+        expect(repeat(3, function (n) { 
+            console.log(`Hello ${n}`);
+        })).toBeUndefined;
+    });
+    // Combinators: Higher-order pure functions that take only functions as arguments and return a function
+    // combinators are useful when you want to emphasize WHAT you’re doing and HOW it fits together
+    it('page 46. Combinators. compose == Bluebird', () => {
+        const addOne = (number) => number + 1;
+        const doubleOf = (number) => number * 2;
+        const doubleOfAddOneA = (number) => doubleOf(addOne(number));
+
+        const compose = (a, b) => (c) => a(b(c));
+        const doubleOfAddOneB = compose(doubleOf, addOne);
+        expect(doubleOfAddOneA(4)).toBe(10);
+        expect(doubleOfAddOneB(2)).toBe(6);
+    });
+
+
+
+    // NO SÉ CÓMO TESTEARLO
+    // A function decorator is a higher-order function that takes one function as an argument, 
+    // returns another function, and the returned function is a variation of the argument function
+    it('page 47. Function decorators', () => {
+        const not = (fn) => (x) => !fn(x);
+        const something = (x) => x != null;
+        const nothing = (x) => !something(x);
+        //expect(not(something(2))).toBe(nothing(!2));
+    });
+});
+
+
+describe('BUILDING BLOCKS', () => {
+    // whenever you are CHAINING 2 or more functions together, you are COMPOSING them. Example: bluebird
+    it('page. 48. Composition', () => {
+        const even = (number) => { return number * 2; }
+        const addOne = (number) => { return number + 1; }
+        const compose = (a, b) => (c) => a(b(c));
+
+        const operations = compose(addOne, even);
+        expect(operations(3)).toBe(7);
+    });
+    // Partial application: A function that represents part of our application.
+    it('page. 49. Partial Application', () => {
+        const input = [1, 2, 3];
+        const outputExpected = [1, 4, 9];
+        // "map" applies another function to the elements of an array
+        //const map = (array, fn) => array.map(fn);
+        //const squareAll = (array) => map(array, (n) => n * n); // it also works
+        const squareAll = (array) => array.map((n) => n * n);
+        expect(squareAll(input)).toEqual(expect.arrayContaining(outputExpected));
+    });
+    // same partial application but we can write a single function that will work 
+    // always no matter the function passed as 2nd parameter to map is
+    it('mapWith', () => {
+        const input = [1, 2, 3];
+        const outputExpected = [1, 4, 9];
+        const map = (array, fn) => array.map(fn);
+        const mapWith = (fn) => (array) => map(array, fn);
+        
+        const squareAll = mapWith((n) => n * n); 
+        expect(squareAll(input)).toEqual(expect.arrayContaining(outputExpected));
+        
+        const outputExpected2 = [1, 8, 27];
+        // Even if I change the function inside map, I don't need to change the function map,
+        // because what changes is the function we pass as parameter 
+        const squareAll2 = mapWith((n) => n * n * n); 
+        expect(squareAll2(input)).toEqual(expect.arrayContaining(outputExpected2));
+    });
+});
+
+// Javascript binds the values that come in the arguments with the name of those arguments.
+// ALSO binds values to some "magic names" besides those in the arguments.
+describe('MAGIC NAMES. Two options', () => {
+    it('page 51. The FUNCTION keyword', () => {
+        // Magic name --> this: it is bound to something called the function’s context. (we'll talk about it in objects and class)
+        // Magic name --> arguments: it contains a list of arguments passed to a function.
+        const plus1 = function (a, b) { 
+            // Although arguments looks like an array, it isn’t an array: It’s more like an object
+            //  that happens to bind some values to properties with names that look like integers starting with zero
+            return arguments[0] + arguments[1];
+        }
+        expect(plus1(3, 6)).toBe(9);
+        // you can pass 0 arguments to the function, but to call it with arguments.
+        const plus2 = function () { 
+            return arguments[0] + arguments[1];
+        }
+        expect(plus2(3, 6)).toBe(9);
+        
+        // You can return the number of arguments
+        const howMany = function () { 
+            return arguments['length'];
+        } 
+        expect(howMany()).toBe(0);
+        expect(howMany('hello')).toBe(1);
+        expect(howMany('sharks', 'are', 'apex', 'predators')).toBe(4);
+    });
+    // The magic names THIS and ARGUMENTS have a different behaviour when you invoke a function defined with a fat arrow
+    // Instead of being bound when the function is invoked, the fat arrow function always acquires the bindings for THIS 
+    // and ARGUMENTS from its enclosing scope, just like any other binding.
+    it('page 52. Fat arrows', () => {
+        // not using fat arrow function
+        expect((function () {
+            return (function () { 
+                return arguments[0]; // it will always be "inner", because it refers to its only argument
+            })('inner');
+        })('outer')).toBe("inner");
+        // using fat arrow function, ARGUMENTS will be defined in the outer environment, the one defined with function
+        expect((function () {
+            return (() => arguments[0])('inner'); // It will take the argument defined with function
+        })("outer")).toBe("outer");
+
+
+        /// PAGINA 53 ???
+        const mapWith = (fn) => (array) => map(array, fn);
+        const row = function () { 
+            return mapWith(
+                (column) => column * arguments[0], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+        }
+        //row(3) = [3,6,9,12,15,18,21,24,27,30,33,36];
+    });
+});
+
 
 /*describe('', () => {
     it('', () => {
