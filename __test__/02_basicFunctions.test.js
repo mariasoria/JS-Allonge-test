@@ -598,10 +598,3 @@ describe('MAGIC NAMES. Two options', () => {
         //row(3) = [3,6,9,12,15,18,21,24,27,30,33,36];
     });
 });
-
-
-/*describe('', () => {
-    it('', () => {
-        expect().toBe();
-    });
-});*/
