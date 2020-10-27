@@ -102,13 +102,103 @@ describe('Arrays and destructuring arguments', () => {
 });
 
 describe('Self-similarity.', () => {
-    it('page 86. ', () => {
+    // Defining a list describing rules for building lists:
+    // 1st - Empty
+    // 2nd - It is an element concatenated with a list
+    it('page 86. Compose lists', () => {
+        expect([]).toStrictEqual([]);
+        expect(["baz", ...[]]).toStrictEqual(["baz"]);
+        expect(["baz", ...["baz"]]).toStrictEqual(["baz", "baz"]);
+        expect(["baz", ...["bar", "baz"]]).toStrictEqual(["baz", "bar", "baz"]);
     });
-    it('page 88. Linear recursion', () => {
+    // Same rules to decompose lists
+    it('page 87. Decompose lists', () => {
+        const [first1, ...rest1] = [];
+        expect(first1).toBeUndefined();
+        expect(rest1).toStrictEqual([]);
+
+        const [first2, ...rest2] = ["foo"];
+        expect(first2).toEqual("foo");
+        expect(rest2).toStrictEqual([]);
+
+        const [first3, ...rest3] = ["foo", "bar"];
+        expect(first3).toEqual("foo");
+        expect(rest3).toStrictEqual(["bar"]);
+
+        const [first4, ...rest4] = ["foo", "bar", "baz"];
+        expect(first4).toEqual("foo");
+        expect(rest4).toStrictEqual(["bar", "baz"]);
+
+        const isEmpty = ([first, ...rest]) => first === undefined;
+        expect(isEmpty([])).toBeTruthy();
+        expect(isEmpty([undefined])).toBeTruthy();
+        expect(isEmpty([0])).toBeFalsy();
+        expect(isEmpty([[]])).toBeFalsy();
+        expect(isEmpty([0,1])).toBeFalsy();
     });
-    it('page 90. Mapping', () => {
+    it('Re-defining "length" decomposing list with RECURSIVITY', () => {
+        // It is recursive because our definition of a list is recursive, and if a list is self-similar, 
+        // it is natural to create an algorithm that is also self-similar
+        const length = ([first, ...rest]) => first === undefined
+            ? 0
+            : 1 + length(rest);
+        expect(length([])).toBe(0);
+        expect(length([0])).toBe(1);
+        expect(length([1, 2])).toBe(2);
+        expect(length(["foo", "bar", "baz"])).toBe(3);
     });
+    it('page 89. Linear recursion: divide and conquer', () => {
+        // flatten an array: return an array of elements that aren’t arrays from an array of arrays
+        const flatten = ([first, ...rest]) => {
+            if(first === undefined) return [];
+            else if(!Array.isArray(first)){
+                return [first, ...flatten(rest)];
+            }
+            else {
+                return [...flatten(first), ...flatten(rest)];
+            }
+        }
+        expect(flatten([[0], 1, 2])).toStrictEqual([0, 1, 2]);
+        expect(flatten(["foo",[3, 4, []]])).toStrictEqual(["foo", 3, 4]);
+    });
+    it('page 90. Mapping: applying a function to every element of an array', () => {
+        // e.g. square each number in a list
+        const squareAll = ([first, ...rest]) => first === undefined 
+            ? [] 
+            : [first * first, ...squareAll(rest)];
+        expect(squareAll([1, 2, 3, 4, 5])).toStrictEqual([1,4,9,16,25]);
+        // e.g. "Truthify" all elements in a list
+        const truthyAll = ([first, ...rest]) => first === undefined 
+            ? [] 
+            : [!!first, ...truthyAll(rest)];
+        expect(truthyAll([null, true, 25, false, "foo"])).toStrictEqual([false,true,true,false,true]);
+        // Making a mapping (template) function
+        const mapWith = (fn, [first, ...rest]) =>  first === undefined 
+            ? [] 
+            : [fn(first), ...mapWith(fn, rest)];
+        expect(mapWith((x) => x + x, [1, 2, 3, 4, 5])).toStrictEqual([2, 4, 6, 8, 10]);
+        expect(mapWith((x)=>!!x, [null, true, 25, false, "foo"])).toStrictEqual([false, true, true, false, true]);
+    });    
     it('page 91. Folding', () => {
+        // rewrite our mapWith function using folding to sum squares of the elements in an array.
+        // terminal value: specifies the value in the terminal case (last case). 
+        // In the next example, the terminal case would be an empty list, 
+        // so its value needs to be 0 in order to add it to the result.
+        const foldWith = (fn, terminalValue, [first, ...rest]) => first === undefined
+            ? terminalValue
+            : fn(first, foldWith(fn, terminalValue, rest));
+        expect(foldWith((x, rest) => x*x + rest, 0, [1, 2, 3, 4, 5])).toBe(55);
+        // Using foldWith to calculate the square of the elements of an array
+        const squareAll = (array) => 
+            foldWith((first, rest) => [first * first, ...rest], [], array);
+        expect(squareAll([1, 2, 3, 4, 5])).toStrictEqual([1,4,9,16,25]);
+        // Write mapWith using foldWith
+        const mapWith = (fn, array) => foldWith((first, rest) => [fn(first), ...rest], [], array);
+        const squareAllFold = (array) => mapWith((x) => x * x, array);
+        expect(squareAllFold([1, 2, 3, 4, 5])).toStrictEqual([1,4,9,16,25]);
+        // Rewriting function LENGTH as a fold
+        const length = (array) => foldWith((first, rest) => 1 + rest, 0, array);
+        expect(length([1, 2, 3, 4, 5])).toBe(5);
     });
 });
 
