@@ -202,6 +202,91 @@ describe('Self-similarity.', () => {
     });
 });
 
+
+// TAILS CALLS happens when using mapping/folding. What happens is that if the array used is too big, 
+// the system will need a lot of memory and an overflow will happen.
+describe('Tail Calls', () => {
+    // SOLUTIONS
+    it('page 96. TCO: tail-call optimization', () => {
+        // A “tail-call” occurs when a function’s last act is to invoke another function, 
+        // and then return whatever the other function returns.
+        // In that case, JavaScript optimizes away the function call overhead and stack space.
+    });
+    it('page 97, Converting non-tail-calls to tail-calls', () => {
+        // NON-TAIL-CALL
+        const lengthNoNTail = ([first, ...rest]) => first === undefined
+            ? 0
+            : 1 + lengthNoNTail(rest);
+        // TAIL-CALL
+        const lengthDelaysWork = ([first, ...rest], numberToBeAdded) => first === undefined
+            ? numberToBeAdded
+            : lengthDelaysWork(rest, 1 + numberToBeAdded)
+        const length = (n) => lengthDelaysWork(n, 0);
+        expect(length(["foo", "bar", "baz"])).toBe(3);
+        // PARTIAL APPLICATION
+        const callLast = (fn, ...args) => (...remainingArgs) =>
+            fn(...remainingArgs, ...args);
+        const lengthPartialApplication = callLast(lengthDelaysWork, 0);
+        expect(lengthPartialApplication(["foo", "bar", "baz"])).toBe(3);
+        // mapWith + TailCall
+        const mapWithDelaysWork = (fn, [first, ...rest], prepend) => first === undefined
+            ? prepend
+            : mapWithDelaysWork(fn, rest, [...prepend, fn(first)]);
+        const mapWith = callLast(mapWithDelaysWork, []); 
+        expect(mapWith((x) => x * x, [1, 2, 3, 4, 5])).toStrictEqual([1,4,9,16,25]);
+    });
+    it('page 98. Factorials', () => {
+        // Traditional way (Non tail-call)
+        const factorial = (n) => n == 1
+        ? n
+        : n * factorial(n - 1);
+        expect(factorial(5)).toBe(120);
+        // Tail-Call
+        const factorialWithDelayedWork = (n, work) => n === 1
+            ? work
+            : factorialWithDelayedWork(n - 1, n * work);
+        const factorialTailCall = (n) => factorialWithDelayedWork(n, 1);
+        expect(factorialTailCall(5)).toBe(120);
+        // Partial application
+        const callLast = (fn, ...args) => (...remainingArgs) =>
+            fn(...remainingArgs, ...args);
+        const factorialPartialApp = callLast(factorialWithDelayedWork, 1);
+        expect(factorialPartialApp(5)).toBe(120);
+    });
+    it('page 100. Default arguments', () => {
+        // We want to write something like factorial(6), and have JavaScript automatically 
+        // know that we really mean factorial(6, 1). But when it calls itself, it will call 
+        // factorial(5, 6) and that will not mean factorial(5, 1). Solution?
+        // Set a default parameter so we don't need to add it everytime
+        const factorial = (n, work = 1) => n === 1
+            ? work
+            : factorial(n - 1, n * work);
+            expect(factorial(6))
+ //=> 720
+    });
+});
+
+
+
+describe('Garbage, garbage everywhere', () => {
+    it('', () => {
+    });
+});
+
+
+
+describe('Plain old Javascript objects', () => {
+    it('', () => {
+    });
+});
+
+
+describe('Mutation', () => {
+    it('', () => {
+    });
+});
+
+
 /*
 describe('', () => {
     it('', () => {
